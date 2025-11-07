@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Kart</title>
+    <!-- Load Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Styles for Neumorphism and 3D Card Effects */
+        :root {
+            --bg-light: #f0f0f5;
+            --bg-dark: #1f2937;
+        }
+
+        /* Default Light Mode Shadows */
+        .shadow-neomorphic {
+            box-shadow: 10px 10px 20px #c9c9cf, -10px -10px 20px #ffffff;
+        }
+
+        .shadow-inner-neomorphic {
+            box-shadow: inset 5px 5px 10px #d4d4d4, inset -5px -5px 10px #ffffff;
+        }
+
+        /* Dark Mode Shadows */
+        .dark .shadow-neomorphic {
+            box-shadow: 10px 10px 20px #141a22, -10px -10px 20px #2a384e;
+        }
+
+        .dark .shadow-inner-neomorphic {
+            box-shadow: inset 5px 5px 10px #1c2432, inset -5px -5px 10px #223042;
+        }
+
+        /* 3D Transform for Product Card */
+        .product-card-3d:hover {
+            transform: scale(1.05) rotateY(4deg) rotateX(1deg);
+        }
+
+        .product-card-3d {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        /* Poppins Font Application */
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        /* Simple Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-800 transition-colors duration-500">
+
+    <!-- Tailwind Config for Custom Shadows (must be before content) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-indigo': '#4f46e5',
+                    },
+                    boxShadow: {
+                        'neomorphic': '10px 10px 20px #c9c9cf, -10px -10px 20px #ffffff',
+                        'inner-neomorphic': 'inset 5px 5px 10px #d4d4d4, inset -5px -5px 10px #ffffff',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="min-h-screen">
+        <!-- Header will be injected here -->
+        <div id="header-container"></div>
+        
+        <!-- Main content will be injected here -->
+        <main id="main-content" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8"></main>
+
+        <!-- Footer will be injected here -->
+        <div id="footer-container"></div>
+    </div>
+    
+    <!-- Modals and Chatbot go outside the main app flow -->
+    <div id="modal-container"></div>
+    <div id="chatbot-container"></div>
+
+    <script>
+        // --- GLOBAL APP STATE & DATA ---
+        window.appState = {
+            currentPage: 'home',
+            darkMode: false,
+            // --- UPDATED PRODUCTS WITH INR PRICES AND IMAGE URLS (25 Products) ---
+            products: [
+                // --- Mobiles (5 products) ---
+                { id: 'm1', name: "Galaxy M54 5G", price: 23999, category: "Mobiles", brand: "Samsung", rating: 4.5, stock: 50, description: "Powerful 5G smartphone with a massive battery and sleek design.", imageUrl: "https://img-new.cgtrader.com/items/4932482/bf28e3e30e/samsung-galaxy-m54-silver-3d-model-bf28e3e30e.webp" },
+                { id: 'm2', name: "Redmi Note 13 Pro", price: 18999, category: "Mobiles", brand: "Xiaomi", rating: 4.6, stock: 70, description: "108MP camera, smooth display, and fast charging.", imageUrl: "https://media.cgtrader.com/variants/NMomfJp13XVybkqZ6rmeL8LV/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/01_main.webp" },
+                { id: 'm3', name: "iPhone SE (2022)", price: 44900, category: "Mobiles", brand: "Apple", rating: 4.7, stock: 30, description: "Compact design with the powerful A15 Bionic chip.", imageUrl: "https://media.cgtrader.com/variants/wESrUMtUHrdjng7FhwUMCnVb/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/AiPhSE_white.webp" },
+                { id: 'm4', name: "OnePlus Nord CE 3", price: 26999, category: "Mobiles", brand: "OnePlus", rating: 4.4, stock: 65, description: "Fluid AMOLED display and OxygenOS experience.", imageUrl: "https://media.cgtrader.com/variants/vEYyyb3ScrbnThaudRiECfd1/78add9c2f02fbd73a43ffb3970be38683c5f15eff6ca849dc78c644f4ff9ce1b/COVER.webp" },
+                { id: 'm5', name: "Oppo Reno 10 5G", price: 32990, category: "Mobiles", brand: "Oppo", rating: 4.3, stock: 45, description: "Dedicated portrait camera system and curved display.", imageUrl: "https://img-new.cgtrader.com/items/4581218/736dc2ba53/oppo-reno-10-pro-black-3d-model-736dc2ba53.webp" },
+                
+                // --- Electronics (5 products) ---
+                { id: 'e1', name: "4K UHD Smart TV (55 inch)", price: 38500, category: "Electronics", brand: "Sony", rating: 4.8, stock: 20, description: "Immersive viewing experience with Dolby Vision.", imageUrl: "https://placehold.co/400x400/059669/FFFFFF?text=Smart+TV" },
+                { id: 'e2', name: "Noise Cancelling Headphones", price: 7999, category: "Electronics", brand: "Bose", rating: 4.6, stock: 80, description: "Industry-leading noise cancellation and superb comfort.", imageUrl: "https://placehold.co/400x400/14B8A6/FFFFFF?text=Headphones" },
+                { id: 'e3', name: "Gaming Mechanical Keyboard", price: 4999, category: "Electronics", brand: "Logitech", rating: 4.5, stock: 120, description: "Tactile key switches and customizable RGB lighting.", imageUrl: "https://placehold.co/400x400/EF4444/FFFFFF?text=Keyboard" },
+                { id: 'e4', name: "Portable Bluetooth Speaker", price: 2499, category: "Electronics", brand: "JBL", rating: 4.4, stock: 150, description: "Waterproof, rugged design with 20 hours playtime.", imageUrl: "https://placehold.co/400x400/F97316/FFFFFF?text=Speaker" },
+                { id: 'e5', name: "Home Security Camera", price: 1999, category: "Electronics", brand: "Mi", rating: 4.3, stock: 90, description: "Full HD resolution with night vision and two-way talk.", imageUrl: "https://placehold.co/400x400/3B82F6/FFFFFF?text=Security+Cam" },
+                
+                // --- Fashion (5 products) ---
+                { id: 'f1', name: "Men's Slim Fit Denim", price: 1899, category: "Fashion", brand: "Levi's", rating: 4.7, stock: 200, description: "Classic slim-fit denim jeans for everyday wear.", imageUrl: "https://placehold.co/400x400/6D28D9/FFFFFF?text=Denim" },
+                { id: 'f2', name: "Women's Floral Kurta Set", price: 1450, category: "Fashion", brand: "W", rating: 4.6, stock: 180, description: "Elegant cotton kurta set with vibrant floral prints.", imageUrl: "https://placehold.co/400x400/DB2777/FFFFFF?text=Kurta" },
+                { id: 'f3', name: "Unisex Aviator Sunglasses", price: 899, category: "Fashion", brand: "RayBan", rating: 4.5, stock: 100, description: "UV protected aviator sunglasses with metal frame.", imageUrl: "https://placehold.co/400x400/94A3B8/FFFFFF?text=Sunglasses" },
+                { id: 'f4', name: "Leather Formal Shoes", price: 2999, category: "Fashion", brand: "Bata", rating: 4.4, stock: 130, description: "Premium genuine leather formal shoes, comfortable fit.", imageUrl: "https://placehold.co/400x400/4B5563/FFFFFF?text=Formal+Shoes" },
+                { id: 'f5', name: "Digital Sports Watch", price: 1199, category: "Fashion", brand: "Fastrack", rating: 4.3, stock: 160, description: "Water-resistant digital watch with multiple sports modes.", imageUrl: "https://placehold.co/400x400/10B981/FFFFFF?text=Sports+Watch" },
+
+                // --- Home (5 products) ---
+                { id: 'h1', name: "Cotton Double Bed Sheet", price: 999, category: "Home", brand: "Bombay Dyeing", rating: 4.7, stock: 300, description: "Soft cotton bedsheet with two matching pillow covers.", imageUrl: "https://placehold.co/400x400/6366F1/FFFFFF?text=Bed+Sheet" },
+                { id: 'h2', name: "Smart LED Bulb (3-Pack)", price: 899, category: "Home", brand: "Philips", rating: 4.6, stock: 250, description: "Wi-Fi enabled bulb with millions of colors, voice control.", imageUrl: "https://placehold.co/400x400/F97316/FFFFFF?text=Smart+Bulb" },
+                { id: 'h3', name: "Stainless Steel Cookware Set", price: 3499, category: "Home", brand: "Prestige", rating: 4.8, stock: 70, description: "Induction friendly set of pots and pans.", imageUrl: "https://placehold.co/400x400/9CA3AF/FFFFFF?text=Cookware" },
+                { id: 'h4', name: "Ergonomic Office Chair", price: 7999, category: "Home", brand: "Featherlite", rating: 4.5, stock: 50, description: "High-back mesh chair with adjustable lumbar support.", imageUrl: "https://placehold.co/400x400/06B6D4/FFFFFF?text=Office+Chair" },
+                { id: 'h5', name: "Air Fryer (4 Litre)", price: 4499, category: "Home", brand: "Havells", rating: 4.4, stock: 90, description: "Oil-free frying for healthier meals.", imageUrl: "https://placehold.co/400x400/D946EF/FFFFFF?text=Air+Fryer" },
+
+                // --- Grocery (5 products) ---
+                { id: 'g1', name: "Organic Basmati Rice (5kg)", price: 650, category: "Grocery", brand: "Daawat", rating: 4.7, stock: 500, description: "Long grain, aromatic basmati rice.", imageUrl: "https://placehold.co/400x400/84CC16/FFFFFF?text=Basmati+Rice" },
+                { id: 'g2', name: "Instant Coffee Powder (200g)", price: 349, category: "Grocery", brand: "Nescafe", rating: 4.6, stock: 450, description: "Rich, aromatic instant coffee blend.", imageUrl: "https://placehold.co/400x400/FCD34D/000000?text=Coffee+Jar" },
+                { id: 'g3', name: "Premium Green Tea Bags (100)", price: 299, category: "Grocery", brand: "Tetley", rating: 4.5, stock: 350, description: "Refreshing blend of natural green tea.", imageUrl: "https://placehold.co/400x400/34D399/FFFFFF?text=Green+Tea" },
+                { id: 'g4', name: "Refined Sunflower Oil (1L)", price: 165, category: "Grocery", brand: "Fortune", rating: 4.4, stock: 600, description: "Light and healthy cooking oil.", imageUrl: "https://placehold.co/400x400/A78BFA/FFFFFF?text=Cooking+Oil" },
+                { id: 'g5', name: "Atta Whole Wheat Flour (10kg)", price: 420, category: "Grocery", brand: "Aashirvaad", rating: 4.8, stock: 400, description: "100% whole wheat flour for soft rotis.", imageUrl: "https://placehold.co/400x400/92400E/FFFFFF?text=Wheat+Flour" },
+            ],
+            cart: [],
+            loggedInUser: null, // {id: 'u1', email: 'test@ekart.com', name: 'User'}
+            paymentDetails: {
+                address: '',
+                method: 'Credit Card',
+            },
+            searchQuery: '',
+            searchFilters: { minPrice: 0, maxPrice: 50000, category: '' }
+        };
+
+        // --- UTILITY FUNCTIONS ---
+
+        /** Toggles Dark Mode */
+        function toggleDarkMode() {
+            window.appState.darkMode = !window.appState.darkMode;
+            document.documentElement.classList.toggle('dark', window.appState.darkMode);
+            renderHeader(); // Re-render header to update icon
+        }
+
+        /** Simple In-Memory Authentication Simulation */
+        function loginUser(email) {
+            window.appState.loggedInUser = { 
+                id: crypto.randomUUID(), 
+                email: email, 
+                name: email.split('@')[0] 
+            };
+            renderHeader();
+            renderModal(
+                'Login Successful',
+                `<p>Welcome back, ${window.appState.loggedInUser.name}!</p>`,
+                null
+            );
+        }
+
+        /** Simulated Modal / Message Box */
+        function renderModal(title, bodyHtml, confirmAction = null) {
+            const container = document.getElementById('modal-container');
+            if (container.querySelector('.modal-backdrop')) {
+                // If a modal is already open, close it first
+                container.innerHTML = '';
+            }
+
+            const modalHtml = `
+                <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-neomorphic w-full max-w-md transition-all duration-300">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b pb-2">${title}</h3>
+                        <div class="text-gray-700 dark:text-gray-200 mb-6">${bodyHtml}</div>
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="document.getElementById('modal-container').innerHTML = '';" 
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-white rounded-lg hover:bg-gray-300 transition-colors">
+                                ${confirmAction ? 'Cancel' : 'Close'}
+                            </button>
+                            ${confirmAction ? `
+                                <button onclick="window.appState.confirmAction();" 
+                                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                    Confirm
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = modalHtml;
+            
+            // Set global action for confirm button if needed
+            if (confirmAction) {
+                window.appState.confirmAction = () => {
+                    document.getElementById('modal-container').innerHTML = '';
+                    confirmAction();
+                };
+            }
+        }
+        
+        /** Cart Management */
+        function getCartTotal() {
+            // Using toLocaleString for Indian Rupee formatting (e.g., 2,399.00)
+            return window.appState.cart.reduce((total, item) => total + item.price * item.quantity, 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function addToCart(productId) {
+            const product = window.appState.products.find(p => p.id === productId);
+            const cartItem = window.appState.cart.find(item => item.id === productId);
+
+            if (cartItem) {
+                cartItem.quantity++;
+            } else {
+                window.appState.cart.push({ ...product, quantity: 1 });
+            }
+            renderModal('Item Added', `<p>${product.name} added to your cart!</p>`);
+            renderHeader();
+        }
+
+        function updateCartQuantity(productId, quantity) {
+            window.appState.cart = window.appState.cart
+                .map(item => item.id === productId ? { ...item, quantity: quantity } : item)
+                .filter(item => item.quantity > 0);
+            renderPage('cart');
+            renderHeader();
+        }
+
+        // --- AI CHATBOT LOGIC ---
+        function handleChatQuery(query) {
+            const q = query.toLowerCase();
+            let response = { text: "I'm the E-Kart assistant. I'm still learning! Try typing 'deals' or 'mobile'.", action: null };
+
+            if (q.includes('deals') || q.includes('offers')) {
+                response.text = "We have great deals on Electronics and Fashion right now! I'll take you to the top deals section.";
+                response.action = () => renderPage('home');
+            } else if (q.includes('mobile') || q.includes('phone')) {
+                response.text = "Searching for mobiles now. Check out the latest 5G models!";
+                response.action = () => {
+                    window.appState.searchFilters.category = 'Mobiles'; 
+                    renderPage('home'); // Renders home with search results
+                };
+            } else if (q.includes('help') || q.includes('contact')) {
+                response.text = "For human support, please check the 'Help Center' in the footer. I'm here for product questions!";
+            } else {
+                 response.text = "I couldn't quite understand that. To search, please use the search bar at the top!";
+            }
+            return response;
+        }
+
+        // --- RENDERING CORE COMPONENTS ---
+        
+        /** Renders the persistent Header */
+        function renderHeader() {
+            const container = document.getElementById('header-container');
+            const cartCount = window.appState.cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            container.innerHTML = `
+                <header class="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
+                        <h1 onclick="renderPage('home')" class="text-3xl font-extrabold text-primary-indigo dark:text-indigo-400 cursor-pointer">
+                            E-Kart
+                        </h1>
+                        
+                        <!-- Search Bar -->
+                        <div class="flex flex-1 max-w-xl mx-0 md:mx-8 w-full">
+                            <input 
+                                id="search-input"
+                                type="text"
+                                placeholder="Search products, brands, or categories..."
+                                value="${window.appState.searchQuery}"
+                                oninput="window.appState.searchQuery = this.value; renderPage('home');"
+                                class="w-full p-3 rounded-l-lg border-2 border-indigo-300 dark:border-indigo-700 focus:outline-none focus:ring-2 focus:ring-primary-indigo dark:bg-gray-700 dark:text-white shadow-inner-neomorphic transition-all duration-300"
+                            />
+                            <button onclick="renderPage('home')" class="bg-primary-indigo text-white p-3 rounded-r-lg hover:bg-indigo-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- User & Mode Toggle -->
+                        <div class="flex items-center space-x-4">
+                            <!-- Dark/Light Mode Toggle -->
+                            <button onclick="toggleDarkMode()" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-neomorphic">
+                                ${window.appState.darkMode 
+                                    ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>'
+                                    : '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>'
+                                }
+                            </button>
+                            
+                            <!-- Cart Icon -->
+                            <button onclick="renderPage('cart')" class="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-neomorphic">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                ${cartCount > 0 ? `<span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">${cartCount}</span>` : ''}
+                            </button>
+                            
+                            <!-- User Icon -->
+                            <button onclick="window.appState.loggedInUser ? renderModal('User Account', '<p>Welcome, ' + window.appState.loggedInUser.name + '. You are logged in.</p>') : renderPage('auth')" 
+                                class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-neomorphic">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-1.87 0-3.64.27-5.32.78C4.54 15.82 3 17.5 3 19.5v2h18v-2c0-2-1.54-3.68-3.68-4.72C15.64 14.27 13.87 14 12 14z" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+            `;
+        }
+        
+        /** Renders the persistent Footer */
+        function renderFooter() {
+            document.getElementById('footer-container').innerHTML = `
+                <footer class="mt-16 border-t border-gray-200 dark:border-gray-700 py-8 bg-white dark:bg-gray-900 transition-colors duration-500">
+                    <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm space-x-4">
+                        <a href="#" onclick="renderModal('About Us', '<p>E-Kart: Your gateway to the future of 3D e-commerce.</p>')" class="hover:text-primary-indigo">About Us</a>
+                        <a href="#" onclick="renderModal('Contact', '<p>Email: support@ekart.com | Phone: 1-800-E-KART</p>')" class="hover:text-primary-indigo">Contact</a>
+                        <a href="#" onclick="renderModal('Help Center', '<p>Search our FAQs for immediate answers.</p>')" class="hover:text-primary-indigo">Help Center</a>
+                        <a href="#" onclick="renderModal('Privacy Policy', '<p>We value your privacy and data security.</p>')" class="hover:text-primary-indigo">Privacy Policy</a>
+                    </div>
+                    <div class="text-center text-xs mt-4 text-gray-400 dark:text-gray-500">
+                        &copy; ${new Date().getFullYear()} E-Kart. All rights reserved.
+                    </div>
+                </footer>
+            `;
+        }
+
+        // --- PAGE RENDERING FUNCTIONS ---
+
+        /** Product Card HTML Template */
+        function productCard(product) {
+            return `
+                <div onclick="renderPage('product', '${product.id}')" 
+                    class="product-card-3d p-4 rounded-2xl cursor-pointer shadow-neomorphic bg-white dark:bg-gray-700 transition-colors duration-500 hover:shadow-xl">
+                    <div class="text-center">
+                        <!-- Product Image / 3D Placeholder -->
+                        <div class="h-36 mb-4 rounded-xl flex items-center justify-center overflow-hidden">
+                            <img src="${product.imageUrl}" alt="${product.name} Image" 
+                                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                                onerror="this.onerror=null; this.src='https://placehold.co/400x400/94a3b8/000000?text=E-KART+IMAGE'">
+                        </div>
+                        
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white truncate mt-2">${product.name}</h3>
+                        <div class="flex justify-center items-center text-yellow-500 text-sm my-1">
+                            ${'★'.repeat(Math.floor(product.rating))}${'☆'.repeat(5 - Math.floor(product.rating))} 
+                            <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">(${product.rating})</span>
+                        </div>
+                        <!-- Updated to INR -->
+                        <p class="text-2xl font-extrabold text-primary-indigo dark:text-indigo-400 my-2">₹${product.price.toLocaleString('en-IN')}</p>
+
+                        <button onclick="event.stopPropagation(); addToCart('${product.id}')"
+                            class="w-full mt-3 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all duration-300 shadow-lg active:scale-95">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        /** Renders the Home Page content */
+        function renderHomePage() {
+            const container = document.getElementById('main-content');
+            
+            // Apply search filtering
+            const filteredProducts = window.appState.products.filter(p => {
+                const queryMatch = p.name.toLowerCase().includes(window.appState.searchQuery.toLowerCase());
+                const categoryMatch = window.appState.searchFilters.category === '' || p.category === window.appState.searchFilters.category;
+                const priceMatch = p.price >= window.appState.searchFilters.minPrice && p.price <= window.appState.searchFilters.maxPrice;
+                return queryMatch && categoryMatch && priceMatch;
+            });
+
+            container.innerHTML = `
+                <section class="mb-10">
+                    <!-- Dynamic Hero Banner Slider Placeholder -->
+                    <div class="h-48 sm:h-60 mb-8 rounded-2xl bg-gradient-to-r from-primary-indigo to-purple-600 dark:from-indigo-700 dark:to-purple-800 flex items-center justify-center shadow-xl">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-white text-center p-4">
+                            Limited Time Offer: UP TO ₹10,000 OFF Electronics!
+                        </h2>
+                    </div>
+
+                    <!-- Categories Section -->
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Shop by Category</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-10">
+                        ${['Mobiles', 'Electronics', 'Fashion', 'Home', 'Grocery', 'Sports'].map(cat => `
+                            <button onclick="window.appState.searchFilters.category = '${cat}'; renderPage('home');"
+                                class="p-4 rounded-xl shadow-neomorphic bg-white dark:bg-gray-700 text-center hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-200">
+                                <span class="text-xl font-semibold text-primary-indigo">${cat}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <!-- Search Results / Trending Deals -->
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
+                        ${window.appState.searchQuery || window.appState.searchFilters.category ? 'Search Results' : 'Trending & Top Deals'} 
+                        <span class="text-sm text-gray-500 ml-2">(${filteredProducts.length} items)</span>
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        ${filteredProducts.length > 0 ? filteredProducts.map(productCard).join('') : `
+                            <div class="lg:col-span-4 p-8 text-center bg-yellow-50 dark:bg-gray-700 rounded-xl shadow-neomorphic">
+                                <p class="text-lg font-semibold text-yellow-800 dark:text-yellow-400">No products match your search criteria.</p>
+                                <button onclick="window.appState.searchQuery=''; window.appState.searchFilters.category=''; renderPage('home');" class="mt-4 text-primary-indigo hover:underline">Clear Search</button>
+                            </div>
+                        `}
+                    </div>
+                </section>
+            `;
+        }
+
+        /** Renders the Product Detail Page */
+        function renderProductPage(productId) {
+            const container = document.getElementById('main-content');
+            const product = window.appState.products.find(p => p.id === productId);
+
+            if (!product) {
+                container.innerHTML = `<div class="p-10 text-center text-red-500">Product not found.</div>`;
+                return;
+            }
+
+            const recommendedProducts = window.appState.products
+                .filter(p => p.id !== productId && p.category === product.category)
+                .slice(0, 3); // Show max 3 similar products
+
+            container.innerHTML = `
+                <section class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <!-- Product Images/3D View (Col 1/3) -->
+                    <div class="lg:col-span-1 p-6 rounded-2xl shadow-neomorphic bg-white dark:bg-gray-700">
+                        <div class="h-80 bg-indigo-100 dark:bg-gray-600 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
+                            <img src="${product.imageUrl}" alt="${product.name} Image" 
+                                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                                onerror="this.onerror=null; this.src='https://placehold.co/400x400/94a3b8/000000?text=E-KART+IMAGE'">
+                        </div>
+                        <p class="text-center text-sm text-gray-500 dark:text-gray-400">Drag to rotate the 3D model (Simulated)</p>
+                    </div>
+
+                    <!-- Product Details (Col 2/3) -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white">${product.name}</h1>
+                        
+                        <div class="flex items-center space-x-4">
+                            <!-- Updated to INR -->
+                            <div class="text-3xl font-bold text-primary-indigo dark:text-indigo-400">₹${product.price.toLocaleString('en-IN')}</div>
+                            <div class="text-yellow-500 text-lg">
+                                ${'★'.repeat(Math.floor(product.rating))}${'☆'.repeat(5 - Math.floor(product.rating))} 
+                                <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">(${product.rating} Rating)</span>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">${product.description}</p>
+
+                        <div class="flex space-x-4 pt-4">
+                            <button onclick="addToCart('${product.id}')"
+                                class="flex-1 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all shadow-lg active:scale-95">
+                                Add to Cart
+                            </button>
+                            <button onclick="addToCart('${product.id}'); renderPage('checkout');"
+                                class="flex-1 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-all shadow-lg active:scale-95">
+                                Buy Now
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reviews & Recommendations -->
+                <section class="mt-12">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Recommended Similar Products</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        ${recommendedProducts.length > 0 ? recommendedProducts.map(productCard).join('') : 
+                            '<p class="text-gray-500 dark:text-gray-400">No similar products found in this category.</p>'}
+                    </div>
+                </section>
+            `;
+        }
+        
+        /** Renders the Cart Page */
+        function renderCartPage() {
+            const container = document.getElementById('main-content');
+            const items = window.appState.cart;
+
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="p-10 text-center bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic">
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-4">Your Cart is Empty</h2>
+                        <p class="text-gray-600 dark:text-gray-300 mb-6">Explore our trending deals and fill it up!</p>
+                        <button onclick="renderPage('home')" class="py-2 px-6 bg-primary-indigo text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                            Continue Shopping
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Cart Items List (Col 1/3) -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">Shopping Cart (${items.length} Items)</h2>
+                        ${items.map(item => `
+                            <div class="flex items-center p-4 bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic">
+                                <div class="w-20 h-20 bg-gray-100 dark:bg-gray-600 rounded-lg mr-4 overflow-hidden">
+                                    <img src="${item.imageUrl}" alt="${item.name} Image" 
+                                        class="w-full h-full object-cover" 
+                                        onerror="this.onerror=null; this.src='https://placehold.co/80x80/94a3b8/000000?text=IMG'">
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${item.name}</h3>
+                                    <!-- Updated to INR -->
+                                    <p class="text-primary-indigo dark:text-indigo-400 font-bold">₹${item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="updateCartQuantity('${item.id}', ${item.quantity - 1})" class="p-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full">-</button>
+                                    <span class="w-6 text-center text-gray-900 dark:text-white">${item.quantity}</span>
+                                    <button onclick="updateCartQuantity('${item.id}', ${item.quantity + 1})" class="p-2 text-green-500 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full">+</button>
+                                </div>
+                                <button onclick="updateCartQuantity('${item.id}', 0)" class="ml-4 p-2 text-gray-400 hover:text-red-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Summary (Col 2/3) -->
+                    <div class="lg:col-span-1 sticky top-20 p-6 bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic h-min">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2">Order Summary</h2>
+                        <div class="space-y-3 text-gray-700 dark:text-gray-300">
+                            <div class="flex justify-between"><span>Subtotal:</span><span class="font-semibold">₹${getCartTotal()}</span></div>
+                            <div class="flex justify-between"><span>Shipping:</span><span class="font-semibold">FREE</span></div>
+                            <div class="flex justify-between border-t pt-3 font-bold text-lg text-gray-900 dark:text-white">
+                                <!-- Updated to INR -->
+                                <span>Total:</span><span>₹${getCartTotal()}</span>
+                            </div>
+                        </div>
+                        <button onclick="renderPage('checkout')" 
+                            class="w-full mt-6 py-3 bg-primary-indigo text-white rounded-lg font-bold hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
+                            Proceed to Checkout
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        /** Renders the Checkout Page */
+        function renderCheckoutPage() {
+            const container = document.getElementById('main-content');
+            if (window.appState.cart.length === 0) {
+                container.innerHTML = '<div class="p-10 text-center text-red-500">Your cart is empty. Please add items to checkout.</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">Secure Checkout</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Steps & Payment (Col 1/3) -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Shipping Address -->
+                        <div class="p-6 bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic">
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">1. Shipping Address</h3>
+                            <input type="text" id="shipping-address" value="${window.appState.paymentDetails.address}" oninput="window.appState.paymentDetails.address=this.value" 
+                                placeholder="Enter full shipping address" class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic" required>
+                        </div>
+                        
+                        <!-- Payment Method -->
+                        <div class="p-6 bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic">
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">2. Select Payment Method</h3>
+                            <div class="flex space-x-4 mb-4">
+                                ${['Credit Card', 'UPI', 'COD'].map(method => `
+                                    <button onclick="window.appState.paymentDetails.method='${method}'; renderPage('checkout');" 
+                                        class="p-2 rounded-lg text-sm font-medium border-2 ${window.appState.paymentDetails.method === method ? 'border-primary-indigo bg-indigo-50 dark:bg-gray-600' : 'border-gray-300 dark:border-gray-500'}">
+                                        ${method}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            
+                            <!-- Payment Details Input -->
+                            <div id="payment-details-form">
+                                ${renderPaymentForm(window.appState.paymentDetails.method)}
+                            </div>
+                        </div>
+
+                        <!-- Place Order Button -->
+                        <button onclick="simulatePayment()" 
+                            class="w-full py-4 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-all shadow-lg active:scale-95">
+                            Place Order | Pay ₹${getCartTotal()}
+                        </button>
+                    </div>
+
+                    <!-- Order Summary (Col 2/3) -->
+                    <div class="lg:col-span-1 sticky top-20 p-6 bg-white dark:bg-gray-700 rounded-xl shadow-neomorphic h-min">
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white border-b pb-2">Final Summary</h3>
+                        ${window.appState.cart.map(item => `
+                            <div class="flex justify-between text-sm py-1 text-gray-700 dark:text-gray-300">
+                                <span>${item.name} (x${item.quantity})</span>
+                                <!-- Updated to INR -->
+                                <span>₹${(item.price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        `).join('')}
+                        <div class="flex justify-between border-t mt-4 pt-3 font-bold text-xl text-gray-900 dark:text-white">
+                            <!-- Updated to INR -->
+                            <span>Order Total:</span><span>₹${getCartTotal()}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /** Renders the specific payment form section */
+        function renderPaymentForm(method) {
+            if (method === 'Credit Card') {
+                return `
+                    <p class="text-gray-500 dark:text-gray-400 mb-3">Card payments are securely processed (Simulated).</p>
+                    <input type="text" placeholder="Card Number (4242...)" class="w-full p-3 mb-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                    <div class="flex space-x-3">
+                        <input type="text" placeholder="MM/YY" class="flex-1 p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                        <input type="text" placeholder="CVV" class="flex-1 p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                    </div>
+                `;
+            }
+            if (method === 'UPI') {
+                return `
+                    <p class="text-gray-500 dark:text-gray-400 mb-3">Enter your Virtual Payment Address (VPA) below (Simulated).</p>
+                    <input type="email" placeholder="yourname@bankupi" class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                `;
+            }
+            if (method === 'COD') {
+                return `
+                    <p class="text-green-600 dark:text-green-400 font-semibold">Cash on Delivery selected. Pay when you receive your order.</p>
+                `;
+            }
+            return '';
+        }
+
+        /** Simulates the Payment and Finalizes the Order */
+        function simulatePayment() {
+            const address = document.getElementById('shipping-address').value;
+            if (!address) {
+                renderModal('Error', '<p>Please enter a valid shipping address to proceed.</p>');
+                return;
+            }
+
+            // Simulate Network Delay and Processing
+            renderModal('Processing Payment', '<p>Your order is being finalized and payment is being verified. Please wait...</p>');
+
+            setTimeout(() => {
+                const total = getCartTotal();
+                let isSuccess = true;
+                let message = 'Your order has been placed successfully! Order ID: EK' + Math.floor(Math.random() * 100000);
+
+                // Simple failure simulation: fails if total price ends in .99
+                if (total.endsWith('99')) {
+                    isSuccess = false;
+                    message = 'Payment failed due to gateway timeout. Please retry with a different method.';
+                }
+
+                document.getElementById('modal-container').innerHTML = ''; // Close processing modal
+
+                if (isSuccess) {
+                    // Clear cart and update UI
+                    window.appState.cart = [];
+                    renderHeader();
+                    renderModal(
+                        'Order Confirmed!',
+                        `<p class="text-green-600 font-bold">${message}</p><p class="mt-2">Total Paid: ₹${total}</p>`,
+                        null
+                    );
+                    renderPage('home'); // Go back to home after successful order
+                } else {
+                    renderModal(
+                        'Payment Failed',
+                        `<p class="text-red-600 font-bold">${message}</p><p class="mt-2">You can retry or select Cash on Delivery.</p>`,
+                        null
+                    );
+                }
+            }, 2000); // 2 second simulated delay
+        }
+
+        /** Renders the Auth Page */
+        function renderAuthPage() {
+            const container = document.getElementById('main-content');
+            container.innerHTML = `
+                <div class="max-w-md mx-auto p-8 rounded-xl shadow-neomorphic bg-white dark:bg-gray-700">
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center">Sign In / Sign Up</h2>
+                    
+                    <form id="auth-form" class="space-y-4">
+                        <input type="email" id="auth-email" placeholder="Email Address" required
+                            class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                        <input type="password" id="auth-password" placeholder="Password" required
+                            class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic">
+                        
+                        <button type="submit" class="w-full py-3 bg-primary-indigo text-white rounded-lg font-bold hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
+                            Login / Create Account
+                        </button>
+                    </form>
+                    
+                    <div class="text-center text-sm text-gray-500 my-4">OR</div>
+
+                    <button onclick="loginUser('google_user@gmail.com')" 
+                        class="w-full py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-neomorphic">
+                        Sign in with Google (Simulated)
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('auth-form').onsubmit = (e) => {
+                e.preventDefault();
+                const email = document.getElementById('auth-email').value;
+                // Simple email validation simulation
+                if (email.includes('@')) {
+                    loginUser(email);
+                    renderPage('home');
+                } else {
+                    renderModal('Error', '<p>Please enter a valid email address.</p>');
+                }
+            };
+        }
+
+
+        /** Main Router Function */
+        function renderPage(page, id = null) {
+            window.appState.currentPage = page;
+            const container = document.getElementById('main-content');
+            container.innerHTML = ''; // Clear content
+
+            switch (page) {
+                case 'home':
+                    renderHomePage();
+                    break;
+                case 'product':
+                    renderProductPage(id);
+                    break;
+                case 'cart':
+                    renderCartPage();
+                    break;
+                case 'checkout':
+                    renderCheckoutPage();
+                    break;
+                case 'auth':
+                    renderAuthPage();
+                    break;
+                default:
+                    renderHomePage();
+            }
+            // Scroll to top on page navigation
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        // --- CHATBOT UI & INITIALIZATION ---
+        function initializeChatbot() {
+            const container = document.getElementById('chatbot-container');
+            let isChatOpen = false;
+            let messages = [{ sender: 'bot', text: "Hello! I'm the E-Kart Assistant. How can I help you find what you need today?" }];
+
+            const renderChatWindow = () => {
+                const chatWindow = document.getElementById('chat-window');
+                chatWindow.innerHTML = `
+                    <div class="flex-1 p-4 overflow-y-auto space-y-3">
+                        ${messages.map(msg => `
+                            <div class="${msg.sender === 'user' ? 'text-right' : 'text-left'}">
+                                <span class="inline-block p-3 rounded-xl max-w-[80%] 
+                                    ${msg.sender === 'user' ? 'bg-primary-indigo text-white' : 'bg-gray-100 dark:bg-gray-600 dark:text-white shadow-neomorphic'}">
+                                    ${msg.text}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="p-3 border-t dark:border-gray-600 flex">
+                        <input id="chat-input" type="text" placeholder="Ask me anything..." 
+                            class="flex-1 p-3 rounded-l-lg border dark:bg-gray-800 dark:border-gray-600 dark:text-white shadow-inner-neomorphic"
+                            onkeypress="if(event.key === 'Enter') { handleChatSubmit(); }">
+                        <button onclick="handleChatSubmit()" class="p-3 bg-primary-indigo text-white rounded-r-lg hover:bg-indigo-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 12h14" /></svg>
+                        </button>
+                    </div>
+                `;
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            };
+
+            window.handleChatSubmit = () => {
+                const inputElement = document.getElementById('chat-input');
+                const query = inputElement.value.trim();
+                if (!query) return;
+
+                messages.push({ sender: 'user', text: query });
+                inputElement.value = '';
+                renderChatWindow(); // Show user message immediately
+
+                const botResponse = handleChatQuery(query);
+                
+                // Simulate bot response delay
+                setTimeout(() => {
+                    messages.push({ sender: 'bot', text: botResponse.text });
+                    renderChatWindow();
+                    if (botResponse.action) {
+                        botResponse.action();
+                    }
+                }, 1000);
+            };
+
+            // Main Chatbot Toggle Button
+            container.innerHTML = `
+                <button id="chat-toggle-btn" class="fixed bottom-6 right-6 p-4 bg-primary-indigo text-white rounded-full shadow-xl z-50 hover:bg-indigo-600 transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M16 10h.01M12 16h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.805A9.73 9.73 0 0112 3c4.97 0 9 3.582 9 8z" /></svg>
+                </button>
+                <div id="chat-window" class="fixed bottom-24 right-6 w-80 h-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col z-50 transition-all duration-300 scale-0 origin-bottom-right">
+                    <!-- Chat window content will be injected here -->
+                </div>
+            `;
+
+            const chatToggleBtn = document.getElementById('chat-toggle-btn');
+            const chatWindow = document.getElementById('chat-window');
+
+            chatToggleBtn.onclick = () => {
+                isChatOpen = !isChatOpen;
+                chatWindow.classList.toggle('scale-0', !isChatOpen);
+                chatWindow.classList.toggle('scale-100', isChatOpen);
+                if (isChatOpen) {
+                    renderChatWindow();
+                }
+            };
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            // Check for system dark mode preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                window.appState.darkMode = true;
+                document.documentElement.classList.add('dark');
+            }
+
+            renderHeader();
+            renderFooter();
+            initializeChatbot();
+            renderPage('home'); // Start on the Home Page
+        };
+    </script>
+</body>
+</html>
